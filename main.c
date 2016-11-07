@@ -21,20 +21,22 @@ typedef struct menPlist{
 }Men_Plist;
     Men_Plist *memory_plist;
     FreeMen_block *tag;     //循环首次适应算法标志指针
-//void Distribute();
-void creat_plist();
-void Recover();
-void mainWindow();
+void initialize();
+int insert(FreeMen_block *newFree);
+int recovery_memory(int val);
+void Recover0();
+void Recover1();
+void mainWindow();  //主窗口
 void oneWindow();
 void twoWindow();
-void outPut();
-void FFT();
-void CFFT();
-void BF();
+void outPut();  //输出内存信息
+void FFT();     //首次适应算法
+void CFFT();    //循环首次适应算法
+void BF();      //最佳适应算法
 int main()
 {
     char choose;
-    creat_plist();
+    initialize();
     outPut();
     mainWindow();
     while(1){
@@ -76,6 +78,13 @@ void initialize(){//初始化
     memory_plist->first = first;
     tag = (FreeMen_block *)malloc(sizeof(FreeMen_block));
     tag = memory_plist->first;
+    FreeMen_block *p1,*p2,*p3;
+    setMen(&p1,20,120);
+    setMen(&p2,200,100);
+    setMen(&p3,400,60);
+    insert(p3);
+    insert(p2);
+    insert(p1);
 }
 int insert(FreeMen_block *newFree){
     FreeMen_block *p = memory_plist->first;
@@ -91,16 +100,6 @@ int insert(FreeMen_block *newFree){
     }
     p->next = newFree;
     return 1;
-}
-void creat_plist(){
-    initialize();
-    FreeMen_block *p1,*p2,*p3;
-    setMen(&p1,20,120);
-    setMen(&p2,200,100);
-    setMen(&p3,400,60);
-    insert(p3);
-    insert(p2);
-    insert(p1);
 }
 int length(){
     int length=0;
@@ -212,7 +211,7 @@ void FFT(){
             printf("请输入您想进行的操作：\n");
             break;
         case '2':
-            Recover();
+            recovery_memory(0);
             break;
         default:
             mainWindow();
@@ -231,7 +230,7 @@ void  CFFT(){
             printf("请输入您想进行的操作：\n");
             break;
         case '2':
-            Recover();
+            recovery_memory(0);
             break;
         case '3':
             mainWindow();
@@ -252,7 +251,7 @@ void  BF(){
             printf("请输入您想进行的操作：\n");
             break;
         case '2':
-            Recover();
+            recovery_memory(1);
             break;
         default:
             mainWindow();
@@ -260,14 +259,66 @@ void  BF(){
         }
     }
 }
-void Recover(){
+int recovery_memory(int val){
+    int addr_b;
+    int length_b;
+    FreeMen_block *newFree;
+    printf("请输入您想回收的内存起始地址:");
+    scanf("%d",&addr_b);
+    printf("请输入请求空间的大小：");
+    scanf("%d",&length_b);
+    setMen(&newFree,addr_b,length_b);
+    FreeMen_block *p = memory_plist->first->next;
+    while(p!=NULL){
+        if(addr_b<p->addr && (addr_b+length_b)==p->addr){
+            p->addr = addr_b;
+            p->length = p->length+length_b;
+            printf("回收后的空闲链表情况如下:\n");
+            outPut();
+            return 1;
+        }else if((p->addr+p->length)== addr_b && (addr_b+length_b) == (p->next->addr)){
+            p->length = p->length+length_b+p->next->length;
+            p->next = p->next->next;
+            printf("回收后的空闲链表情况如下:\n");
+            outPut();
+            return 1;
+        }else if(addr_b>p->addr && (p->addr+p->length)==addr_b){
+            p->length = p->length+length_b;
+            printf("回收后的空闲链表情况如下:\n");
+            outPut();
+            return 1;
+        }else if(addr_b==p->addr){
+            printf("无效的地址！\n");
+        }
+        /*else{
+            insert(newFree);
+            if(val==1){
+                sort();
+            }
+            printf("回收后的空闲链表情况如下:\n");
+            outPut();
+            return 1;
+        }
+        */
+        p = p->next;
+    }
+    insert(newFree);
+    if(val==1){
+        sort();
+    }
+    printf("回收后的空闲链表情况如下:\n");
+    outPut();
+    return 1;
+}
+/*
+void Recover0(){
     char operate;
-    oneWindow();
+    //oneWindow();
     while(1){
         scanf(" %c",&operate);
         switch(operate){
         case 'A':
-
+            recovery_memory(0);
             break;
         case 'B':
             break;
@@ -276,6 +327,23 @@ void Recover(){
         }
     }
 };
+void Recover1(){
+    char operate;
+    //oneWindow();
+    while(1){
+        scanf(" %c",&operate);
+        switch(operate){
+        case 'A':
+            recovery_memory(1);
+            break;
+        case 'B':
+            break;
+        default:
+            break;
+        }
+    }
+};
+*/
 void outPut(){
     printf("***************  当前空闲分区链状态  **************\n\n");
     FreeMen_block *p=memory_plist->first->next;
